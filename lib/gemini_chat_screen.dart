@@ -19,6 +19,8 @@ import 'in_memory_chat_controller.dart';
 
 const Duration _kChunkAnimationDuration = Duration(milliseconds: 350);
 
+const double _kStickToBottomThreshold = 80;
+
 class GeminiChatScreen extends StatefulWidget {
   final String geminiApiKey;
 
@@ -45,6 +47,8 @@ class _GeminiChatScreenState extends State<GeminiChatScreen> {
   StreamSubscription? _currentStreamSubscription;
   String? _currentStreamId;
 
+  bool _stickToBottom = true;
+
   @override
   void initState() {
     super.initState();
@@ -52,6 +56,7 @@ class _GeminiChatScreenState extends State<GeminiChatScreen> {
       chatController: _chatController,
       chunkAnimationDuration: _kChunkAnimationDuration,
     );
+    _streamManager.addListener(_onStreamManagerChanged);
 
     _model = GenerativeModel(
       model: 'gemini-2.5-flash-lite',
@@ -67,6 +72,7 @@ class _GeminiChatScreenState extends State<GeminiChatScreen> {
   @override
   void dispose() {
     _currentStreamSubscription?.cancel();
+    _streamManager.removeListener(_onStreamManagerChanged);
     _streamManager.dispose();
     _chatController.dispose();
     _scrollController.dispose();
@@ -111,6 +117,39 @@ class _GeminiChatScreenState extends State<GeminiChatScreen> {
     _currentStreamId = null;
   }
 
+  void _onStreamManagerChanged() {
+    if (!_stickToBottom) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_stickToBottom) return;
+      _jumpScrollToBottom();
+    });
+  }
+
+  void _syncStickFromScroll() {
+    if (!_scrollController.hasClients) return;
+    final position = _scrollController.position;
+    final distance = position.maxScrollExtent - position.pixels;
+    final next = distance <= _kStickToBottomThreshold;
+    if (next != _stickToBottom) {
+      final wasSticking = _stickToBottom;
+      _stickToBottom = next;
+      if (!wasSticking && next) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted || !_stickToBottom) return;
+          _jumpScrollToBottom();
+        });
+      }
+    }
+  }
+
+  void _jumpScrollToBottom() {
+    if (!_scrollController.hasClients) return;
+    final position = _scrollController.position;
+    final target = position.maxScrollExtent;
+    if ((target - position.pixels).abs() < 0.5) return;
+    position.jumpTo(target);
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -119,11 +158,21 @@ class _GeminiChatScreenState extends State<GeminiChatScreen> {
       appBar: AppBar(title: const Text('Gemini Chat')),
       body: ChangeNotifierProvider.value(
         value: _streamManager,
-        child: Chat(
+        child: NotificationListener<ScrollNotification>(
+          onNotification: (ScrollNotification notification) {
+            if (notification is UserScrollNotification ||
+                notification is ScrollEndNotification) {
+              _syncStickFromScroll();
+            }
+            return false;
+          },
+          child: Chat(
           builders: Builders(
             chatAnimatedListBuilder: (context, itemBuilder) {
               return ChatAnimatedList(
                 scrollController: _scrollController,
+                shouldScrollToEndWhenSendingMessage: false,
+                shouldScrollToEndWhenAtBottom: false,
                 itemBuilder: itemBuilder,
               );
             },
@@ -198,6 +247,7 @@ class _GeminiChatScreenState extends State<GeminiChatScreen> {
             },
           ),
           theme: ChatTheme.fromThemeData(theme),
+        ),
         ),
       ),
     );
