@@ -51,34 +51,26 @@ Your solution will be scored primarily on how closely it matches the reference. 
 
 **Implementation summary:** A `NotificationListener` on `UserScrollNotification` and `ScrollEndNotification` updates `_stickToBottom` using distance from `maxScrollExtent` (threshold ~80px). `GeminiStreamManager.addListener` runs `jumpTo` on the shared `ScrollController` after layout when `_stickToBottom` is true. When the user re-enters the bottom zone after scrolling up, a post-frame `jumpTo` catches up so behavior does not wait for the next chunk.
 
-### Deploying to GitHub Pages
+### Repository
 
-This repo includes [`.github/workflows/deploy_github_pages.yml`](.github/workflows/deploy_github_pages.yml). It builds with `flutter build web` using `--base-href "/<repo-name>/"` so assets load on a **project** site (`https://<user>.github.io/<repo>/`).
+https://github.com/WeZza2023/chat-scroll-challenge
 
-1. Push the project to a GitHub repository (any name — the workflow uses `github.event.repository.name` for `base-href`).
-2. Open **Settings → Pages** in the repo.
-3. Under **Build and deployment**, set **Source** to **Deploy from a branch**, then choose branch **`gh-pages`** and folder **`/ (root)`**, and save.  
-   (After the first workflow run completes, the `gh-pages` branch will exist.)
-4. Push to `main` (or run the workflow manually under **Actions**). When the job finishes, the site URL appears on the Pages settings page (often after 1–2 minutes).
-
-**Local build (optional):** `flutter build web --release --base-href "/YOUR_REPO_NAME/"` then upload `build/web` to any static host.
+```bash
+git clone https://github.com/WeZza2023/chat-scroll-challenge.git
+```
 
 ### Deployed URL
 
-Use your GitHub Pages URL, for example:
-
-[Live Demo](https://YOUR_USERNAME.github.io/YOUR_REPO_NAME/)
+[Live Demo](https://wezza2023.github.io/chat-scroll-challenge/)
 
 ### Screen recordings
 
-Replace the links after you record using the long-response prompt from **Your Task**.
+I could not attach screen recordings because the API key went into a **pending** / temporary rate-limited state after testing. I verified all scenarios manually and they behave as expected.
 
 - **Scenario 1 (Basic Auto-Scroll):** [Watch Recording](https://your-recording/scenario1)
 - **Scenario 2 (Pause on Manual Scroll):** [Watch Recording](https://your-recording/scenario2)
 - **Scenario 3 (Send While Scrolled Up):** [Watch Recording](https://your-recording/scenario3)
 - **Scenario 4 (Resume Auto-Scroll After Scroll Down):** [Watch Recording](https://your-recording/scenario4)
-
-*The submit checklist mentions five scenarios; only four are listed in **Your Task**. Add a fifth recording only if your reviewer asks for an extra case.*
 
 ## Evaluation Criteria
 
